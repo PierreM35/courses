@@ -1,0 +1,81 @@
+Regions:
+Define areas where a functional unit should find place in the shell
+Regions are administrated by the region manager.
+Regions can take the form of any xaml control. A region adapter must be provided. 
+For the controls: ContentControl, ItemsControl and an adapter is already provided by the prim library. If other controls should be used,
+a custom adapter must be implemented.
+ 
+Modules:
+are a functional unit from the main app. 
+Can exist for itself.
+Are implemented in their own project.
+Must be registered in the main app project (containing the shell)
+When creating a new module:
+-use the usercontrolLibrary component in VS (so that you can create wpf objects in it)
+-add the prism.wpf nuget package
+Module registration:
+1. Module catalog creation
+	-per code
+	-On disk (requires the module projects to write their dll by build in a target folder - no reference to module project needed)
+	-over app.config (config file to be added to shell project)
+2. Catalog registration in the prismApp
+3. Module registration into catalog
+Modules can be set, so that they are loaded on demand or by default.
+
+View displaying
+Composite view is a view made out of different views (typically usercontrols)
+2 ways: discovery, injection
+By discovery, views are registed once to a region, then the region load it automaticaly (static).
+By injection, it is possible to act onto the views hosted by a region at run time: Add/Remove/Activate/Deactivate (dynamic). The corresponding logic 
+shall be implemented in the Module classe (MVVM -> VMs have no ref to views). 
+
+Connection View - ViewModel
+Best practice if using MVVM Pattern: ViewModelLocator.
+The prim library contains an implementation of the viewmodellocator. Using the prism framework, the binding is automatic if views and vms are put 
+in correspondings folders an if respecting a naming convention:
+VMname = ViewNameViewModel
+The naming convention can be changed by need.
+By need it is possible using the VMLocationProvider (inside the module) to manually assign a VM to a V too (bypassing the naming convention). Doing so, 
+it won't be Reflection used and the app will be a bit faster.
+
+Commands:
+Prism contains an implementation of ICommand: DelegateCommand. It takes an Execute Action and a canExecute Function. There is an generic 
+implementation too (DelegateCommand<T> takes an Execute Function).
+There are 3 ways to dynamically set the CanExectue methode:
+-Calling the Command "RaiseCanExecuteChanged" methode
+-using the DelegateCommand "ObservesProperty" property to make the command obeserves any property and reexecute the canExecute
+methode whenever this prop changes.
+-using the DelegateCommand "ObservesCanExecute" property to replace the CanExecute Methode by the given property. This prop must return a bool.
+
+CompositeCommand: owns child commands that will be invoked when it gets invoked. Child command shall be previously registered. If one of the
+childs command has CanExecute returning false, the parent command CanExecute will be set to false too.
+CompositeCommand must be registered before use and unregistered when they are unussefull, otherwise they create a memory leak.
+
+IEventAggregator:
+The event classes must be implemented in a commun accessible project: CoreProject.
+Possibility to filter the subscribers to an event, so that just some of then are invoked when the event is fired.
+Possibility to unsubscribe to an event if needed, using the an event or a token.
+
+Region navigation:
+Alternativ to View Composition: by view composition a reference of the view is needed. That's why the composition inside the container that owns all views.
+If Region content change is needed from a VM, there is no reference of the view available (MVVM). This is where the Navigation helps, because it allows
+view referencering over a key of type string.
+Views must first be registered, and then called over an IRegionManager. The parameter awaited is the string containing the type of the view wanted.
+To make a view aware to the navigations events and execute specific logic when these occure, we  just have to implement the INavigationAware interface in 
+the corresponding VM or straight in the view.
+Over INavigationAware it is possible to transfert parameters from Vs/VMs to Vs/VMs. 
+Over INavigationAware it is possible to set if the view being navigated to is a new instance or an existing one. For that we have to implement the
+INavigationTarget accordingly (returns true -> existince instance otherwise new instance).
+Over IConfirmNavigationRequest we can introduce confirmation logic @navigation requests.
+Prism provide a navagation historic, a journal, over which we can navigate forward/backward through the history.
+
+Dialogs:
+For repetiting dialogs, we can create IDialogService extensions.
+
+
+ToLearn:
+Singleton
+Reflection
+ViewModelLocator
+Class Extensions
+ 
